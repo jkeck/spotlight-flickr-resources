@@ -1,0 +1,8 @@
+en:
+  spotlight:
+    resources:
+      flickr:
+        form:
+          url-field:
+            help: "Add a URL to a flickr account."
+          add_item: "Add flickr images"
