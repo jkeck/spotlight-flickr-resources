@@ -1,4 +1,3 @@
-require 'flickr'
 module Spotlight::Resources
   class FlickrHarvester < Spotlight::Resource
     self.weight = -5000
@@ -6,7 +5,7 @@ module Spotlight::Resources
     after_save :harvest_resources
     
     def self.can_provide?(res)
-      Spotlight::Flickr::Resources::Engine.config.flickr_api_key.present? && !!(res.url =~ /^https?:\/\/(w{3}\.|)flickr\.com\//)
+      Spotlight::Flickr::Resources::Engine.config.flickr_api_key.present? && ['user', 'photoset'].include?(res.resource_type)
     end
 
     def update_index(data)
@@ -31,76 +30,31 @@ module Spotlight::Resources
     end
 
     def items
-      @items ||= begin
-        objects = []
-        photos = fetch
-        while photos.page.to_i <= max_pages(photos.pages).to_i
-          photos.each do |photo|
-            objects << photo
-          end
-          photos = fetch(photos.page.to_i + 1)
-        end
-        objects
-      end
-
-    end
-
-    def max_pages(pages)
-      if Spotlight::Flickr::Resources::Engine.config.flickr_max_pages &&
-           Spotlight::Flickr::Resources::Engine.config.flickr_max_pages.to_i < pages.to_i
-        Spotlight::Flickr::Resources::Engine.config.flickr_max_pages
-      else
-        pages
-      end
+      @items ||= Spotlight::Flickr::Resources::API.new(type: resource_type, value: url).images
     end
 
     def convert_entry_to_solr_hash(x)
       h = { 
         exhibit.blacklight_config.document_model.unique_key.to_sym => compound_id(x),
         title_field => x.title, 
-        url: x.source('Large')
+        url: x.url
       }
       
       # TODO: Add tags the correct way
-      # tags = tags_array(x)
-      # h['tags'] = tags if tags.present?
+      # tags = x.tags
 
-      content = description_content(x)
+      content = x.description
       create_sidecars_for(*content.keys)
 
       content.each_with_object(h) do |(key, value), hash|
-        h[exhibit_custom_fields[key].field] = value
-      end
-    end
-
-    def description_content(image)
-      Hash[image.description.split("\n").map(&:chomp).reject(&:empty?).map do |entry|
-        line = entry.split(': ').map(&:strip)
-        [line[0], line[1..line.length].join]
-      end]
-    end
-
-    def tags_array(image)
-      if (tags = image.tags['tag'])
-        tags = [tags] unless tags.is_a?(Array)
-        tags.map{ |t| t['raw'] }
+        if(field = exhibit_custom_fields[key])
+          h[field.field] = value
+        end
       end
     end
 
     def compound_id(x)
       x.id
-    end
-
-    def fetch(page=1)
-      flickr_user.photos(page: page)
-    end
-
-    def flickr_user
-      @flickr_user ||= flickr_api.find_by_url(url)
-    end
-
-    def flickr_api
-      @flickr_api ||= Flickr.new(Spotlight::Flickr::Resources::Engine.config.flickr_api_key)
     end
 
     def title_field
