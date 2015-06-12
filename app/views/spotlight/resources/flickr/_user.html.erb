@@ -1,5 +1,6 @@
 <%= bootstrap_form_for([current_exhibit, @resource], layout: :horizontal, label_col: 'col-md-2', control_col: 'col-sm-6 col-md-6', html: { class: 'item-upload-form', multipart: true } ) do |f| %>
-  <%= f.text_area :url, help: t('.url-field.help') %>
+  <%= f.text_field :url, help: t('.url-field.help'), label: t('.user') %>
+  <%= f.hidden_field :resource_type, value: 'user' %>
   <div class="form-actions">
     <div class="primary-actions">
       <%= cancel_link @resource, :back, class: 'btn btn-default' %>

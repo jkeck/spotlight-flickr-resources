@@ -2,7 +2,16 @@ en:
   spotlight:
     resources:
       flickr:
-        form:
+        tabbed_form:
+          album: "Flickr Album"
+          user: "Flickr User"
+        album:
+          album: "Album ID"
+          add_item: "Add flickr album images"
           url-field:
-            help: "Add a URL to a flickr account."
-          add_item: "Add flickr images"
+            help: "Add the ID of a flickr album."
+        user:
+          user: "User ID"
+          add_item: "Add flickr user's images"
+          url-field:
+            help: "Add the ID of a flickr user."
